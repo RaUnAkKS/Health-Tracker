@@ -43,6 +43,7 @@ Now we deploy the React client.
     *   Click **Add New...** -> **Project**.
     *   Import your `Health-Tracker` repository.
 3.  **Configure Project**:
+    *   **Project Name**: Change this to **lowercase** (e.g., `health-tracker`). Vercel does not allow uppercase letters!
     *   **Framework Preset**: Vite (should auto-detect).
     *   **Root Directory**: Click `Edit` and select `client`.
 4.  **Environment Variables**:
