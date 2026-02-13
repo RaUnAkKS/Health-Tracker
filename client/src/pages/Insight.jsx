@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import Layout from '../components/Layout';
 import InsightCard from '../components/InsightCard';
+import RewardPopup from '../components/RewardPopup';
 import useLogStore from '../store/logStore';
 import useGameStore from '../store/gameStore';
 import useSettingsStore from '../store/settingsStore';
@@ -16,16 +17,31 @@ const Insight = () => {
     const { awardXP } = useGameStore();
     const { soundEnabled, hapticEnabled } = useSettingsStore();
 
+    const [showReward, setShowReward] = useState(false);
+    const [rewardXP, setRewardXP] = useState(0);
+    const [isRewardBonus, setIsRewardBonus] = useState(false);
+
     const handleCompleteAction = async () => {
         if (!latestLog?._id) return;
 
+        console.log('[Insight] Completing action for log:', latestLog._id);
         const result = await completeAction(latestLog._id);
+        console.log('[Insight] Action result:', result);
 
         if (result.success) {
             const { gamification } = result.data;
+            console.log('[Insight] Gamification data:', gamification);
 
-            // Award bonus XP
+            // Show XP reward popup!
             if (gamification) {
+                console.log('[Insight] Setting XP popup:', {
+                    xp: gamification.xpGained,
+                    bonus: gamification.wasQuick
+                });
+                setRewardXP(gamification.xpGained);
+                setIsRewardBonus(gamification.wasQuick || false);
+                setShowReward(true);
+
                 awardXP(gamification.xpGained);
             }
 
@@ -33,12 +49,12 @@ const Insight = () => {
             if (soundEnabled) playSuccessSound();
             if (hapticEnabled) triggerHaptic();
 
-            // Navigate back to dashboard after a moment
+            // Navigate back to dashboard after reward animation
             setTimeout(() => {
                 navigate('/dashboard');
-            }, 1500);
+            }, 2000); // Reduced from 3500ms
         } else {
-            alert(result.error);
+            alert(result.error || 'Failed to complete action');
         }
     };
 
@@ -143,6 +159,15 @@ const Insight = () => {
                             ✨ Action completed! Great job!
                         </div>
                     </motion.div>
+                )}
+
+                {/* XP Reward Popup - Shows after completing corrective action */}
+                {showReward && (
+                    <RewardPopup
+                        xp={rewardXP}
+                        isBonus={isRewardBonus}
+                        onClose={() => setShowReward(false)}
+                    />
                 )}
             </motion.div>
         </Layout>

@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User2, Mail, Lock, Settings2, LogOut } from 'lucide-react';
 import Layout from '../components/Layout';
+import ToggleSetting from '../components/ToggleSetting';
+import HealthPermissionSection from '../components/HealthPermissionSection';
+import AccountUpgradeForm from '../components/AccountUpgradeForm';
+import HealthIntelligence from '../components/HealthIntelligence';
+import InsightHistory from '../components/InsightHistory';
 import useUserStore from '../store/userStore';
 import useGameStore from '../store/gameStore';
 import useLogStore from '../store/logStore';
@@ -27,6 +32,31 @@ const Profile = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [intelligenceProfile, setIntelligenceProfile] = useState(null);
+
+    // Fetch intelligence profile when user is available
+    useEffect(() => {
+        if (user && !isAnonymous) {
+            fetchIntelligenceProfile();
+        }
+    }, [user, isAnonymous]);
+
+    const fetchIntelligenceProfile = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/users/intelligence-profile`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setIntelligenceProfile(data);
+            }
+        } catch (error) {
+            console.error('Error fetching intelligence profile:', error);
+        }
+    };
 
     const handleUpgrade = async (e) => {
         e.preventDefault();
@@ -113,22 +143,25 @@ const Profile = () => {
                     </div>
                 )}
 
+                {/* Health Permission Section */}
+                <HealthPermissionSection />
+
                 {/* Upgrade Section */}
                 {isAnonymous && !showUpgrade && (
                     <div className="glass-card p-6 border-2 border-primary-500">
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
-                            Unlock More Features 🚀
+                            Upgrade Account 🚀
                         </h3>
 
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            Create an account to sync across devices and unlock advanced insights
+                            Add email & password to secure your data
                         </p>
 
                         <button
                             onClick={() => setShowUpgrade(true)}
                             className="btn-primary w-full"
                         >
-                            Upgrade Account
+                            Upgrade Now
                         </button>
                     </div>
                 )}
@@ -239,30 +272,6 @@ const Profile = () => {
                 </button>
             </motion.div>
         </Layout>
-    );
-};
-
-const ToggleSetting = ({ label, enabled, onToggle }) => {
-    return (
-        <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-                {label}
-            </span>
-
-            <button
-                onClick={onToggle}
-                className={`relative w-14 h-7 rounded-full transition-colors ${enabled
-                        ? 'bg-primary-500'
-                        : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-            >
-                <motion.div
-                    className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
-                    animate={{ x: enabled ? 30 : 4 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-            </button>
-        </div>
     );
 };
 

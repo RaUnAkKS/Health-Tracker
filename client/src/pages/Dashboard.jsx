@@ -8,12 +8,20 @@ import XPDisplay from '../components/XPDisplay';
 import SugarLogCard from '../components/SugarLogCard';
 import AchievementToast from '../components/AchievementToast';
 import CustomLogModal from '../components/CustomLogModal';
+import HealthPermissionCard from '../components/HealthPermissionCard';
+import StreakProgressBar from '../components/StreakProgressBar';
+import MilestoneBadge from '../components/MilestoneBadge';
+import WeeklyProgressTracker from '../components/WeeklyProgressTracker';
+import ReminderBanner from '../components/ReminderBanner';
+import RewardPopup from '../components/RewardPopup';
+import BadgeUnlock from '../components/BadgeUnlock';
 import useUserStore from '../store/userStore';
 import useGameStore from '../store/gameStore';
 import useLogStore from '../store/logStore';
 import useSettingsStore from '../store/settingsStore';
 import { playSuccessSound, triggerHaptic } from '../utils/sounds';
 import { pageVariants } from '../utils/animations';
+import { shouldShowPermissionCard } from '../services/healthContext';
 
 const SUGAR_TYPES = ['CHAI', 'SWEETS', 'COLD_DRINK', 'PACKAGED_SNACK'];
 
@@ -38,11 +46,24 @@ const Dashboard = () => {
 
     const [loading, setLoading] = useState(false);
     const [showCustomModal, setShowCustomModal] = useState(false);
+    const [showHealthPermission, setShowHealthPermission] = useState(false);
+    const [showMilestone, setShowMilestone] = useState(false);
+    const [achievedMilestone, setAchievedMilestone] = useState(null);
+    const [motivationalMessage, setMotivationalMessage] = useState('');
+    const [showReward, setShowReward] = useState(false);
+    const [rewardXP, setRewardXP] = useState(0);
+    const [isRewardBonus, setIsRewardBonus] = useState(false);
+    const [showBadge, setShowBadge] = useState(false);
+    const [unlockedBadge, setUnlockedBadge] = useState(null);
+    const [showReminder, setShowReminder] = useState(true);
 
     useEffect(() => {
         fetchStreakStatus();
         fetchGamificationData();
         fetchTodayLogs();
+
+        // Check if we should show health permission card
+        setShowHealthPermission(shouldShowPermissionCard());
     }, []);
 
     const handleLog = async (type) => {
@@ -55,15 +76,38 @@ const Dashboard = () => {
         const result = await createLog({ type });
 
         if (result.success) {
-            const { gamification, insight } = result.data;
+            const { gamification, insight, streak, motivationalMessage } = result.data;
 
             // Play success sound
             if (soundEnabled) playSuccessSound();
 
-            // Update gamification
+            // Update gamification (XP popup shows on Insight page when action completed)
             if (gamification) {
                 awardXP(gamification.xpGained, gamification.achievement);
                 updateStreak({ currentStreak: gamification.currentStreak });
+            }
+
+            // Check for milestone achievement
+            if (streak?.milestone) {
+                setAchievedMilestone(streak.milestone);
+                setShowMilestone(true);
+            }
+
+            // Check for badge unlock (3, 7, 30 days)
+            if (streak?.current === 3) {
+                setUnlockedBadge({ name: 'Consistency Starter', description: '3 days of tracking!' });
+                setShowBadge(true);
+            } else if (streak?.current === 7) {
+                setUnlockedBadge({ name: 'Sugar Aware', description: '7 days strong!' });
+                setShowBadge(true);
+            } else if (streak?.current === 30) {
+                setUnlockedBadge({ name: 'Metabolic Guardian', description: '30 days of dedication!' });
+                setShowBadge(true);
+            }
+
+            // Set motivational message
+            if (motivationalMessage) {
+                setMotivationalMessage(motivationalMessage);
             }
 
             // Refresh data
@@ -74,6 +118,7 @@ const Dashboard = () => {
             setTimeout(() => {
                 navigate('/insight');
             }, 500);
+
         } else {
             alert(result.error);
         }
@@ -82,6 +127,13 @@ const Dashboard = () => {
     };
 
     const handleCustomLog = async (logData, photoFile) => {
+        console.log('[Dashboard] handleCustomLog called', {
+            logData,
+            hasPhoto: !!photoFile,
+            photoName: photoFile?.name,
+            photoSize: photoFile?.size,
+        });
+
         setLoading(true);
         setShowCustomModal(false);
 
@@ -116,6 +168,16 @@ const Dashboard = () => {
         setLoading(false);
     };
 
+    const handleHealthPermissionGranted = () => {
+        setShowHealthPermission(false);
+        // Permission is already stored in localStorage by the service
+    };
+
+    const handleHealthPermissionDeclined = () => {
+        setShowHealthPermission(false);
+        // Decline is already stored in localStorage by the service
+    };
+
     return (
         <Layout>
             <motion.div
@@ -134,6 +196,31 @@ const Dashboard = () => {
                         Ready to track your sugar intake?
                     </p>
                 </div>
+
+                {/* Health Permission Card */}
+                {showHealthPermission && (
+                    <HealthPermissionCard
+                        onPermissionGranted={handleHealthPermissionGranted}
+                        onPermissionDeclined={handleHealthPermissionDeclined}
+                    />
+                )}
+
+                {/* Reminder Banner - Shows when not logged today */}
+                {showReminder && (
+                    <ReminderBanner
+                        streak={currentStreak}
+                        loggedToday={loggedToday}
+                        onDismiss={() => setShowReminder(false)}
+                    />
+                )}
+
+                {/* Weekly Progress Tracker */}
+                <WeeklyProgressTracker logs={todayLogs} />
+
+                {/* Streak Progress Bar */}
+                {currentStreak > 0 && (
+                    <StreakProgressBar currentStreak={currentStreak} />
+                )}
 
                 {/* Streak Counter */}
                 <StreakCounter
@@ -222,6 +309,37 @@ const Dashboard = () => {
                     onSubmit={handleCustomLog}
                     loading={loading}
                 />
+
+                {/* Reward Popup - Variable XP Display */}
+                {showReward && (
+                    <RewardPopup
+                        xp={rewardXP}
+                        isBonus={isRewardBonus}
+                        onClose={() => setShowReward(false)}
+                    />
+                )}
+
+                {/* Badge Unlock - Milestone Celebrations */}
+                {showBadge && unlockedBadge && (
+                    <BadgeUnlock
+                        badge={unlockedBadge}
+                        onDismiss={() => {
+                            setShowBadge(false);
+                            setUnlockedBadge(null);
+                        }}
+                    />
+                )}
+
+                {/* Milestone Badge - Existing streak milestones */}
+                {showMilestone && achievedMilestone && (
+                    <MilestoneBadge
+                        milestone={achievedMilestone}
+                        onDismiss={() => {
+                            setShowMilestone(false);
+                            setAchievedMilestone(null);
+                        }}
+                    />
+                )}
             </motion.div>
         </Layout>
     );
