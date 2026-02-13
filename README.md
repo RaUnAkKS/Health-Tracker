@@ -1,10 +1,8 @@
-# SpikeIQ 🍬⚡
+# SpikeIQ
 
 **Scientific Sugar Tracking & AI Insights**
 
 SpikeIQ is a modern, full-stack health application designed to help users manage their sugar intake through real-time logging, gamification, and AI-driven insights. It combines behavioral psychology (streaks, variable rewards) with hard data to build healthier habits.
-
-![SpikeIQ Banner](https://via.placeholder.com/1200x400.png?text=SpikeIQ+Health+Tracker)
 
 ## ✨ Features
 
