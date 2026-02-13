@@ -14,49 +14,64 @@ const AchievementToast = ({ achievement, onClose }) => {
     return (
         <AnimatePresence>
             {achievement && (
-                <motion.div
-                    variants={slideUpVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full px-4"
-                >
-                    <div className="glass-card p-6 border-2 border-yellow-400 dark:border-yellow-500 shadow-2xl">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        >
-                            <X size={20} />
-                        </button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        className="relative w-full max-w-sm"
+                    >
+                        <div className="glass-card p-6 border-2 border-yellow-400 dark:border-yellow-500 shadow-2xl relative overflow-hidden">
+                            {/* Background Glow */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-300 via-orange-500 to-yellow-300" />
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl pointer-events-none" />
 
-                        <div className="flex items-center gap-4">
-                            <motion.div
-                                animate={{ rotate: [0, 10, -10, 0] }}
-                                transition={{ repeat: 3, duration: 0.3 }}
-                                className="text-5xl"
+                            <button
+                                onClick={onClose}
+                                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors z-10"
                             >
-                                {achievement.emoji}
-                            </motion.div>
+                                <X size={20} />
+                            </button>
 
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <PartyPopper size={20} className="text-yellow-500" />
-                                    <span className="font-bold text-yellow-600 dark:text-yellow-400">
-                                        Achievement Unlocked!
-                                    </span>
+                            <div className="flex flex-col items-center text-center gap-4 pt-2">
+                                <motion.div
+                                    animate={{
+                                        rotate: [0, 10, -10, 0],
+                                        scale: [1, 1.1, 1]
+                                    }}
+                                    transition={{ repeat: Infinity, repeatDelay: 2, duration: 1 }}
+                                    className="text-6xl drop-shadow-md"
+                                >
+                                    {achievement.emoji}
+                                </motion.div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-center gap-2 text-yellow-600 dark:text-yellow-400 font-bold uppercase tracking-wider text-sm">
+                                        <PartyPopper size={18} />
+                                        Achievement Unlocked
+                                        <PartyPopper size={18} />
+                                    </div>
+
+                                    <h3 className="text-2xl font-black text-gray-800 dark:text-white leading-tight">
+                                        {achievement.milestone}-Day Streak!
+                                    </h3>
+
+                                    <p className="text-gray-600 dark:text-gray-300 font-medium">
+                                        {achievement.message}
+                                    </p>
                                 </div>
 
-                                <div className="text-lg font-semibold text-gray-800 dark:text-white">
-                                    {achievement.milestone}-Day Streak!
-                                </div>
-
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    {achievement.message}
-                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="mt-2 text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                                >
+                                    Awesome!
+                                </button>
                             </div>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+                </div>
             )}
         </AnimatePresence>
     );

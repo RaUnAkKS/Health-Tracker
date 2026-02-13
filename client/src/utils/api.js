@@ -56,6 +56,7 @@ export const logsAPI = {
             formData.append('type', data.type);
             if (data.customAmount) formData.append('customAmount', data.customAmount);
             if (data.description) formData.append('description', data.description);
+            if (data.healthContext) formData.append('healthContext', JSON.stringify(data.healthContext)); // Serialize object
             formData.append('photo', photoFile); // Append the actual File object
 
             console.log('[API] Sending FormData with photo:', {
@@ -75,7 +76,8 @@ export const logsAPI = {
     },
     getLogs: (params) => api.get('/logs', { params }),
     getTodayLogs: () => api.get('/logs/today'),
-    completeAction: (logId) => api.put(`/logs/${logId}/action`),
+    completeAction: (id) => api.put(`/logs/${id}/action`),
+    assignTask: (id, taskId) => api.put(`/logs/${id}/task`, { taskId }),
 };
 
 // Gamification API

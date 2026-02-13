@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Insight from './pages/Insight';
 import History from './pages/History';
 import Profile from './pages/Profile';
+import SugarIntelligence from './pages/SugarIntelligence';
 
 function App() {
     const { isOnboarded, initializeFromStorage } = useUserStore();
@@ -57,6 +58,13 @@ function App() {
                         path="/profile"
                         element={
                             isOnboarded ? <Profile /> : <Navigate to="/" replace />
+                        }
+                    />
+
+                    <Route
+                        path="/intelligence"
+                        element={
+                            isOnboarded ? <SugarIntelligence /> : <Navigate to="/" replace />
                         }
                     />
 

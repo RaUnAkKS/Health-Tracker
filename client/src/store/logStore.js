@@ -6,6 +6,7 @@ const useLogStore = create((set, get) => ({
     logs: [],
     todayLogs: [],
     totalSugarToday: 0,
+    totalLogs: 0,
     isLogging: false,
     latestLog: null,
     latestInsight: null,
@@ -46,6 +47,7 @@ const useLogStore = create((set, get) => ({
                 logs: [sugarLog, ...state.logs],
                 todayLogs: [sugarLog, ...state.todayLogs],
                 totalSugarToday: state.totalSugarToday + sugarLog.sugarAmount,
+                totalLogs: state.totalLogs + 1,
                 latestLog: sugarLog,
                 latestInsight: insight,
                 isLogging: false,
@@ -69,7 +71,10 @@ const useLogStore = create((set, get) => ({
     fetchLogs: async (page = 1, limit = 20) => {
         try {
             const response = await logsAPI.getLogs({ page, limit });
-            set({ logs: response.data.logs });
+            set({
+                logs: response.data.logs,
+                totalLogs: response.data.pagination?.total || response.data.logs.length
+            });
             return { success: true, data: response.data };
         } catch (error) {
             console.error('Error fetching logs:', error);
@@ -106,11 +111,18 @@ const useLogStore = create((set, get) => ({
             console.log('[LogStore] Complete action response:', response);
 
             // Update the log in state
+            const xpGained = response.data.data.gamification?.xpGained || 0;
+
             set((state) => ({
-                latestLog: { ...state.latestLog, correctiveActionCompleted: true },
+                latestLog: { ...state.latestLog, correctiveActionCompleted: true, xpAwarded: xpGained },
                 todayLogs: state.todayLogs.map((log) =>
                     log._id === logId
-                        ? { ...log, correctiveActionCompleted: true }
+                        ? { ...log, correctiveActionCompleted: true, xpAwarded: xpGained }
+                        : log
+                ),
+                logs: state.logs.map((log) =>
+                    log._id === logId
+                        ? { ...log, correctiveActionCompleted: true, xpAwarded: xpGained }
                         : log
                 ),
             }));
@@ -125,6 +137,26 @@ const useLogStore = create((set, get) => ({
                 success: false,
                 error: error.response?.data?.message || 'Failed to complete action',
             };
+        }
+    },
+
+    // Assign specific task to a log
+    assignTaskToLog: async (logId, taskId) => {
+        try {
+            console.log('[LogStore] Assigning task to log:', logId, taskId);
+            const response = await logsAPI.assignTask(logId, taskId);
+
+            // Update local state
+            set((state) => ({
+                latestLog: { ...state.latestLog, correctiveActionTaskId: taskId },
+                todayLogs: state.todayLogs.map(l => l._id === logId ? { ...l, correctiveActionTaskId: taskId } : l),
+                logs: state.logs.map(l => l._id === logId ? { ...l, correctiveActionTaskId: taskId } : l)
+            }));
+
+            return { success: true, data: response.data };
+        } catch (error) {
+            console.error('[LogStore] Error assigning task:', error);
+            return { success: false, error: error.message };
         }
     },
 

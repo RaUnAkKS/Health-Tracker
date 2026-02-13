@@ -11,10 +11,11 @@ import useUserStore from '../store/userStore';
 import useGameStore from '../store/gameStore';
 import useLogStore from '../store/logStore';
 import useSettingsStore from '../store/settingsStore';
+import { calculateBMI, getBMInCategory, calculateAge } from '../utils/healthCalculations';
 import { pageVariants } from '../utils/animations';
 
 const Profile = () => {
-    const { user, isAnonymous, upgradeAccount, logout } = useUserStore();
+    const { user, isAnonymous, upgradeAccount, logout, updateProfile } = useUserStore();
     const { clearGameData } = useGameStore();
     const { clearLogData } = useLogStore();
     const {
@@ -33,6 +34,20 @@ const Profile = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [intelligenceProfile, setIntelligenceProfile] = useState(null);
+
+    // Edit Profile State
+    const [showEditProfile, setShowEditProfile] = useState(false);
+    const [editData, setEditData] = useState({ height: 0, weight: 0, gender: '' });
+
+    const handleSaveProfile = async () => {
+        // Validate inputs before saving
+        if (editData.height < 60 || editData.height > 300) return alert('Invalid height');
+        if (editData.weight < 20 || editData.weight > 500) return alert('Invalid weight');
+
+        // Update user store (and backend via store action)
+        await updateProfile(editData);
+        setShowEditProfile(false);
+    };
 
     // Fetch intelligence profile when user is available
     useEffect(() => {
@@ -111,35 +126,110 @@ const Profile = () => {
                     )}
                 </div>
 
-                {/* Profile Info */}
-                {user?.profile && (
-                    <div className="glass-card p-6">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                            Profile Information
-                        </h3>
+                {/* Health Summary - Cards Grid */}
+                {user?.profile && (() => {
+                    try {
+                        const weight = Number(user.profile.weight) || 0;
+                        const height = Number(user.profile.height) || 0;
+                        const dob = user.profile.dateOfBirth;
 
-                        <div className="space-y-3">
-                            <div className="flex justify-between">
-                                <span className="text-gray-600 dark:text-gray-400">Gender</span>
-                                <span className="font-semibold text-gray-800 dark:text-white capitalize">
-                                    {user.profile.gender}
-                                </span>
+                        const bmi = calculateBMI(weight, height);
+                        const bmiInfo = getBMInCategory(bmi);
+                        const age = calculateAge(dob);
+
+                        return (
+                            <div className="grid grid-cols-2 gap-4">
+                                <HealthCard
+                                    label="BMI"
+                                    value={bmi}
+                                    subtext={bmiInfo.category}
+                                    color={bmiInfo.color}
+                                />
+                                <HealthCard
+                                    label="Age"
+                                    value={age}
+                                    subtext="Years"
+                                />
+                                <HealthCard
+                                    label="Weight"
+                                    value={weight}
+                                    subtext="kg"
+                                />
+                                <HealthCard
+                                    label="Height"
+                                    value={height}
+                                    subtext="cm"
+                                />
+                            </div>
+                        );
+                    } catch (err) {
+                        console.error("Profile Health Summary Error:", err);
+                        return <div className="text-red-500">Error loading health data.</div>;
+                    }
+                })()}
+
+                {/* Edit Profile Button */}
+                <button
+                    onClick={() => {
+                        setEditData({
+                            height: user.profile.height,
+                            weight: user.profile.weight,
+                            gender: user.profile.gender
+                        });
+                        setShowEditProfile(true);
+                    }}
+                    className="w-full glass-card p-3 border border-gray-200 dark:border-gray-700 text-primary-600 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                    <Settings2 size={16} />
+                    Edit Health Profile
+                </button>
+
+                {/* Edit Profile Modal */}
+                {showEditProfile && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-sm shadow-xl"
+                        >
+                            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Update Profile</h3>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Height (cm)</label>
+                                    <input
+                                        type="number"
+                                        value={editData.height}
+                                        onChange={(e) => setEditData({ ...editData, height: Number(e.target.value) })}
+                                        className="input-field"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (kg)</label>
+                                    <input
+                                        type="number"
+                                        value={editData.weight}
+                                        onChange={(e) => setEditData({ ...editData, weight: Number(e.target.value) })}
+                                        className="input-field"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="flex justify-between">
-                                <span className="text-gray-600 dark:text-gray-400">Height</span>
-                                <span className="font-semibold text-gray-800 dark:text-white">
-                                    {user.profile.height} cm
-                                </span>
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => setShowEditProfile(false)}
+                                    className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveProfile}
+                                    className="flex-1 py-2 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600"
+                                >
+                                    Save
+                                </button>
                             </div>
-
-                            <div className="flex justify-between">
-                                <span className="text-gray-600 dark:text-gray-400">Weight</span>
-                                <span className="font-semibold text-gray-800 dark:text-white">
-                                    {user.profile.weight} kg
-                                </span>
-                            </div>
-                        </div>
+                        </motion.div>
                     </div>
                 )}
 
@@ -276,3 +366,11 @@ const Profile = () => {
 };
 
 export default Profile;
+
+const HealthCard = ({ label, value, subtext, color }) => (
+    <div className="glass-card p-4 flex flex-col items-center justify-center text-center">
+        <span className="text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider mb-1">{label}</span>
+        <span className={`text-2xl font-black ${color || 'text-gray-800 dark:text-white'}`}>{value}</span>
+        <span className={`text-xs ${color ? 'font-medium ' + color : 'text-gray-500'}`}>{subtext}</span>
+    </div>
+);

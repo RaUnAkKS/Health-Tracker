@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { storage } from '../utils/storage';
 import { authAPI } from '../utils/api';
 import { getDeviceId } from '../utils/deviceId';
-import { calculateBMI } from '../utils/bmiCalculator';
+import { calculateBMI } from '../utils/healthCalculations';
 
 const useUserStore = create(
     persist(
@@ -17,8 +17,11 @@ const useUserStore = create(
                 dateOfBirth: null,
                 height: null,
                 weight: null,
+                weight: null,
                 gender: null,
             },
+            bookmarks: [], // Store bookmarked insight IDs
+            savedInsights: [], // Store full objects for dynamic insights
 
             // Set user data
             setUser: (userData) => {
@@ -38,13 +41,48 @@ const useUserStore = create(
                 }));
             },
 
+            // Toggle bookmark for an insight
+            toggleBookmark: (insightId, insightData = null) => {
+                set((state) => {
+                    const bookmarks = state.bookmarks || [];
+                    const savedInsights = state.savedInsights || [];
+
+                    const isBookmarked = bookmarks.includes(insightId);
+
+                    let newBookmarks;
+                    let newSavedInsights = [...savedInsights];
+
+                    if (isBookmarked) {
+                        // Remove
+                        newBookmarks = bookmarks.filter(id => id !== insightId);
+                        // Also remove from savedInsights if present
+                        newSavedInsights = savedInsights.filter(i => i.id !== insightId);
+                    } else {
+                        // Add
+                        newBookmarks = [...bookmarks, insightId];
+                        // If data provided and not already in static list (or just always for safety), save it
+                        if (insightData) {
+                            // Check if it's already there to be safe
+                            if (!newSavedInsights.find(i => i.id === insightId)) {
+                                newSavedInsights.push(insightData);
+                            }
+                        }
+                    }
+
+                    return {
+                        bookmarks: newBookmarks,
+                        savedInsights: newSavedInsights
+                    };
+                });
+            },
+
             // Complete onboarding and register anonymous user
             completeOnboarding: async () => {
                 try {
                     const { onboardingData } = get();
                     const deviceId = getDeviceId();
 
-                    const bmi = calculateBMI(onboardingData.height, onboardingData.weight);
+                    const bmi = calculateBMI(onboardingData.weight, onboardingData.height);
 
                     const response = await authAPI.registerAnonymous({
                         deviceId,
@@ -122,11 +160,12 @@ const useUserStore = create(
             updateProfile: async (profileData) => {
                 try {
                     const response = await authAPI.updateProfile(profileData);
+                    const updatedUser = response.data;
 
-                    set({ user: response.data });
-                    storage.set('userData', response.data);
+                    set({ user: updatedUser });
+                    storage.set('userData', updatedUser);
 
-                    return { success: true };
+                    return { success: true, data: updatedUser };
                 } catch (error) {
                     console.error('Update profile error:', error);
                     return { success: false, error: error.response?.data?.message || 'Failed to update profile' };

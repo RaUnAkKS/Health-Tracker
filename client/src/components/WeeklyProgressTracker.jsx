@@ -25,18 +25,31 @@ const WeeklyProgressTracker = ({ logs = [] }) => {
 
         const week = [];
 
+        // Helper to format date as YYYY-MM-DD in local time
+        const toLocalDateString = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const todayStr = toLocalDateString(today);
+
         for (let i = 0; i < 7; i++) {
             const date = new Date(monday);
             date.setDate(monday.getDate() + i);
 
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = toLocalDateString(date);
+
             const hasLog = logs.some(log => {
-                const logDate = new Date(log.createdAt).toISOString().split('T')[0];
-                return logDate === dateStr;
+                const logDate = new Date(log.createdAt);
+                return toLocalDateString(logDate) === dateStr;
             });
 
-            const isToday = dateStr === today.toISOString().split('T')[0];
-            const isFuture = date > today;
+            const isToday = dateStr === todayStr;
+
+            // Compare timestamps for future check
+            const isFuture = date.setHours(0, 0, 0, 0) > today.setHours(0, 0, 0, 0);
 
             week.push({
                 day: days[i],

@@ -19,7 +19,7 @@ const ToggleSetting = ({ label, enabled, onToggle, description }) => {
             <button
                 onClick={onToggle}
                 className={`
-                    relative inline-flex h-7 w-14 items-center rounded-full
+                    relative inline-flex h-7 w-12 items-center rounded-full px-1
                     transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
                     ${enabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'}
                 `}
@@ -27,10 +27,8 @@ const ToggleSetting = ({ label, enabled, onToggle, description }) => {
                 <motion.span
                     layout
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className={`
-                        inline-block h-5 w-5 transform rounded-full bg-white shadow-lg
-                        ${enabled ? 'translate-x-8' : 'translate-x-1'}
-                    `}
+                    className="inline-block h-5 w-5 rounded-full bg-white shadow-md"
+                    animate={{ x: enabled ? 20 : 0 }}
                 />
             </button>
         </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Home, FileText, User, Moon, Sun } from 'lucide-react';
+import { Home, FileText, User, Moon, Sun, Brain } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import useSettingsStore from '../store/settingsStore';
 
@@ -9,6 +9,7 @@ const Layout = ({ children }) => {
 
     const navItems = [
         { path: '/dashboard', icon: Home, label: 'Home' },
+        { path: '/intelligence', icon: Brain, label: 'Feed' },
         { path: '/history', icon: FileText, label: 'History' },
         { path: '/profile', icon: User, label: 'Profile' },
     ];
@@ -57,8 +58,8 @@ const Layout = ({ children }) => {
                                 >
                                     <div
                                         className={`p-2 rounded-xl transition-all duration-200 ${isActive
-                                                ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white'
-                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                            ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white'
+                                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                                             }`}
                                     >
                                         <Icon size={24} />
@@ -66,8 +67,8 @@ const Layout = ({ children }) => {
 
                                     <span
                                         className={`text-xs font-medium ${isActive
-                                                ? 'text-primary-600 dark:text-primary-400'
-                                                : 'text-gray-600 dark:text-gray-400'
+                                            ? 'text-primary-600 dark:text-primary-400'
+                                            : 'text-gray-600 dark:text-gray-400'
                                             }`}
                                     >
                                         {item.label}

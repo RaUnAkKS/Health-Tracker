@@ -56,9 +56,16 @@ const StreakProgressBar = ({ currentStreak, nextMilestone, daysRemaining, progre
                     <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${actualProgress}%` }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full"
-                    />
+                        transition={{ duration: 1, ease: 'easeOut', delay: 0.2 }}
+                        className="relative h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full overflow-hidden"
+                    >
+                        {/* Shimmer Effect */}
+                        <motion.div
+                            animate={{ x: ['-100%', '100%'] }}
+                            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent w-full h-full"
+                        />
+                    </motion.div>
                 </div>
 
                 {/* Milestone Indicator */}

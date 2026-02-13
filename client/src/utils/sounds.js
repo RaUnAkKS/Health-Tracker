@@ -63,6 +63,67 @@ export const playStreakSound = () => {
 };
 
 /**
+ * Play level up celebration sound
+ */
+export const playLevelUpSound = () => {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+
+        const audioContext = new AudioContext();
+        const now = audioContext.currentTime;
+
+        // Ethereal chord (C Major 7)
+        const notes = [523.25, 659.25, 783.99, 987.77]; // C5, E5, G5, B5
+
+        notes.forEach((freq, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            // Staggered entry
+            const startTime = now + (i * 0.1);
+
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.2, startTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 1.5);
+
+            osc.start(startTime);
+            osc.stop(startTime + 1.5);
+        });
+
+        // Sparkle effect (high freq random notes)
+        for (let i = 0; i < 10; i++) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.value = 1500 + Math.random() * 1000;
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            const time = now + 0.2 + (Math.random() * 0.5);
+
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(0.05, time + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+
+            osc.start(time);
+            osc.stop(time + 0.2);
+        }
+
+    } catch (error) {
+        console.log('Audio not supported', error);
+    }
+};
+
+/**
  * Trigger haptic feedback (mobile)
  */
 export const triggerHaptic = () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -8,6 +8,9 @@ import XPDisplay from '../components/XPDisplay';
 import SugarLogCard from '../components/SugarLogCard';
 import AchievementToast from '../components/AchievementToast';
 import CustomLogModal from '../components/CustomLogModal';
+import QuickLogModal from '../components/QuickLogModal';
+import LevelUpOverlay from '../components/LevelUpOverlay';
+import MilestoneOverlay from '../components/MilestoneOverlay';
 import HealthPermissionCard from '../components/HealthPermissionCard';
 import StreakProgressBar from '../components/StreakProgressBar';
 import MilestoneBadge from '../components/MilestoneBadge';
@@ -19,9 +22,10 @@ import useUserStore from '../store/userStore';
 import useGameStore from '../store/gameStore';
 import useLogStore from '../store/logStore';
 import useSettingsStore from '../store/settingsStore';
-import { playSuccessSound, triggerHaptic } from '../utils/sounds';
+import { playSuccessSound, playLevelUpSound, triggerHaptic } from '../utils/sounds';
 import { pageVariants } from '../utils/animations';
 import { shouldShowPermissionCard } from '../services/healthContext';
+import { FOOD_ITEMS, getFoodItem } from '../utils/foodData';
 
 const SUGAR_TYPES = ['CHAI', 'SWEETS', 'COLD_DRINK', 'PACKAGED_SNACK'];
 
@@ -31,6 +35,7 @@ const Dashboard = () => {
     const {
         xp,
         level,
+        lastSeenLevel,
         currentStreak,
         loggedToday,
         streakAtRisk,
@@ -40,12 +45,14 @@ const Dashboard = () => {
         fetchGamificationData,
         awardXP,
         updateStreak,
+        acknowledgeLevelUp
     } = useGameStore();
     const { createLog, fetchTodayLogs, todayLogs, totalSugarToday } = useLogStore();
     const { soundEnabled, hapticEnabled } = useSettingsStore();
 
     const [loading, setLoading] = useState(false);
     const [showCustomModal, setShowCustomModal] = useState(false);
+    const [selectedFoodItem, setSelectedFoodItem] = useState(null); // For QuickLogModal
     const [showHealthPermission, setShowHealthPermission] = useState(false);
     const [showMilestone, setShowMilestone] = useState(false);
     const [achievedMilestone, setAchievedMilestone] = useState(null);
@@ -56,24 +63,83 @@ const Dashboard = () => {
     const [showBadge, setShowBadge] = useState(false);
     const [unlockedBadge, setUnlockedBadge] = useState(null);
     const [showReminder, setShowReminder] = useState(true);
+    const [showLevelUp, setShowLevelUp] = useState(false);
+    const [showMilestoneOverlay, setShowMilestoneOverlay] = useState(false);
+    const [milestoneStreak, setMilestoneStreak] = useState(0);
+    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    // const prevLevelRef = useRef(level); // Removed in favor of store state
+    const prevStreakRef = useRef(currentStreak);
 
+    // Initial Data Fetch
     useEffect(() => {
-        fetchStreakStatus();
-        fetchGamificationData();
-        fetchTodayLogs();
-
-        // Check if we should show health permission card
-        setShowHealthPermission(shouldShowPermissionCard());
+        const initDashboard = async () => {
+            await Promise.all([
+                fetchStreakStatus(),
+                fetchGamificationData(),
+                fetchTodayLogs()
+            ]);
+            setIsDataLoaded(true);
+            setShowHealthPermission(shouldShowPermissionCard());
+        };
+        initDashboard();
     }, []);
 
-    const handleLog = async (type) => {
-        if (loading) return;
+    // Level Up Detection
+    useEffect(() => {
+        if (!isDataLoaded) return;
+
+        // Compare persistent lastSeenLevel with current level
+        if (level > lastSeenLevel) {
+            console.log(`[Dashboard] Level Up Detected! ${lastSeenLevel} -> ${level}`);
+            setTimeout(() => {
+                setShowLevelUp(true);
+                if (soundEnabled) playLevelUpSound();
+                if (hapticEnabled) triggerHaptic();
+            }, 500);
+        }
+    }, [level, lastSeenLevel, isDataLoaded, soundEnabled, hapticEnabled]);
+
+    // Streak Milestone Detection
+    useEffect(() => {
+        if (!isDataLoaded) {
+            prevStreakRef.current = currentStreak;
+            return;
+        }
+
+        if (currentStreak > prevStreakRef.current) {
+            // Trigger for ANY streak increase (Day 1, Day 2, etc.)
+            setTimeout(() => {
+                setMilestoneStreak(currentStreak);
+                setShowMilestoneOverlay(true);
+                if (soundEnabled) playLevelUpSound();
+                if (hapticEnabled) triggerHaptic();
+            }, 800);
+        }
+        prevStreakRef.current = currentStreak;
+    }, [currentStreak, isDataLoaded, soundEnabled, hapticEnabled]);
+
+    const handleQuickLogClick = (type) => {
+        const foodItem = getFoodItem(type);
+        if (foodItem) {
+            setSelectedFoodItem(foodItem);
+        } else {
+            console.error('Unknown food type:', type);
+        }
+    };
+
+    const handleQuickLogConfirm = async (sugarAmount) => {
+        if (!selectedFoodItem || loading) return;
 
         setLoading(true);
+        setSelectedFoodItem(null); // Close modal immediately
 
         if (hapticEnabled) triggerHaptic();
 
-        const result = await createLog({ type });
+        // Pass custom amount to createLog
+        const result = await createLog({
+            type: selectedFoodItem.id,
+            customAmount: sugarAmount
+        });
 
         if (result.success) {
             const { gamification, insight, streak, motivationalMessage } = result.data;
@@ -187,14 +253,34 @@ const Dashboard = () => {
                 exit="exit"
                 className="space-y-6"
             >
-                {/* Welcome Message */}
-                <div className="text-center pt-4">
-                    <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-                        Hello! 👋
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                        Ready to track your sugar intake?
-                    </p>
+                {/* Dynamic AI Header */}
+                <div className="pt-4 px-1">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
+                        <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-1 tracking-tight">
+                            {(() => {
+                                if (currentStreak >= 7) return "Strong Momentum";
+                                if (currentStreak >= 3) return "Momentum Active";
+                                return "Today's Signal";
+                            })()}
+                        </h2>
+                        <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.1, duration: 0.6 }}
+                            className="text-gray-600 dark:text-gray-400 text-base font-medium"
+                        >
+                            {(() => {
+                                if (currentStreak >= 7) return "Your daily rhythm is stabilizing.";
+                                if (currentStreak >= 3) return "Consistency is building.";
+                                if (loggedToday) return "Your patterns are forming.";
+                                return "Log your first intake to generate insights.";
+                            })()}
+                        </motion.p>
+                    </motion.div>
                 </div>
 
                 {/* Health Permission Card */}
@@ -271,7 +357,7 @@ const Dashboard = () => {
                             <SugarLogCard
                                 key={type}
                                 type={type}
-                                onClick={() => handleLog(type)}
+                                onClick={() => handleQuickLogClick(type)}
                                 disabled={loading}
                             />
                         ))}
@@ -310,6 +396,14 @@ const Dashboard = () => {
                     loading={loading}
                 />
 
+                {/* Quick Log Modal */}
+                <QuickLogModal
+                    isOpen={!!selectedFoodItem}
+                    onClose={() => setSelectedFoodItem(null)}
+                    foodItem={selectedFoodItem}
+                    onConfirm={handleQuickLogConfirm}
+                />
+
                 {/* Reward Popup - Variable XP Display */}
                 {showReward && (
                     <RewardPopup
@@ -340,6 +434,20 @@ const Dashboard = () => {
                         }}
                     />
                 )}
+                {/* Level Up Overlay */}
+                <LevelUpOverlay
+                    level={level}
+                    isVisible={showLevelUp}
+                    onClose={() => {
+                        setShowLevelUp(false);
+                        acknowledgeLevelUp(); // Sync state so it doesn't show again
+                    }}
+                />
+                <MilestoneOverlay
+                    streak={milestoneStreak}
+                    isVisible={showMilestoneOverlay}
+                    onClose={() => setShowMilestoneOverlay(false)}
+                />
             </motion.div>
         </Layout>
     );
