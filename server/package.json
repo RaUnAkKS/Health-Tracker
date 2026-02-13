@@ -1,0 +1,31 @@
+{
+    "name": "sugar-tracker-server",
+    "version": "1.0.0",
+    "description": "Backend API for Beat the Sugar Spike",
+    "main": "server.js",
+    "scripts": {
+        "dev": "nodemon server.js",
+        "start": "node server.js",
+        "test": "echo \"No tests yet\" && exit 0"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@google-cloud/vision": "^5.3.4",
+        "bcryptjs": "^2.4.3",
+        "cloudinary": "^2.9.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.0.3",
+        "multer": "^2.0.2",
+        "node-cron": "^4.2.1",
+        "nodemailer": "^8.0.1",
+        "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    }
+}
