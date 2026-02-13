@@ -173,10 +173,15 @@ const getRandomAction = (key) => {
  * Generates personalized insights based on user context AND health data context
  */
 
-const generateInsight = async (userId, sugarLogData, healthContext = null) => {
+const generateInsight = async (userOrId, sugarLogData, healthContext = null) => {
     try {
-        // Get user data
-        const user = await User.findById(userId);
+        // Get user data (handle both ID and full object)
+        let user = userOrId;
+        // If it's an ID (string or ObjectId), fetch the user
+        if (typeof userOrId === 'string' || (userOrId.constructor && userOrId.constructor.name === 'ObjectId')) {
+            user = await User.findById(userOrId);
+        }
+
         if (!user) {
             throw new Error('User not found');
         }

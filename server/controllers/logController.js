@@ -13,6 +13,8 @@ const { detectFood } = require('../services/foodDetectionService');
  */
 const createLog = async (req, res) => {
     try {
+        const reqStart = Date.now();
+        console.log(`[PERF] Request started at ${reqStart}`);
         console.log('[LOG] Create log request received');
         console.log('[LOG] Body:', req.body);
         console.log('[LOG] Body fields:', Object.keys(req.body));
@@ -45,7 +47,9 @@ const createLog = async (req, res) => {
         else timeOfDay = 'night';
 
         // Update streak and get achievement
+        const streakStart = Date.now();
         const streakResult = await updateStreak(req.user._id);
+        console.log(`[PERF] Streak update took ${Date.now() - streakStart}ms`);
 
         // XP is NO LONGER awarded for just logging.
         // It is awarded only when user completes the corrective action.
@@ -79,21 +83,26 @@ const createLog = async (req, res) => {
 
         if (photoFile) {
             try {
-                // Upload to Cloudinary
-                photoUrl = await uploadToCloudinary(photoFile.buffer);
+                const startTime = Date.now();
+                console.log('[LOG] Starting parallel Upload + AI...');
 
-                // Detect food with AI (in parallel, don't wait)
-                detectFood(photoFile.buffer)
-                    .then(result => {
-                        aiDetection = result;
-                        console.log('AI Detection:', aiDetection);
+                // Parallel Processing: Maximize utilization of server I/O
+                const [uploadedUrl, aiResult] = await Promise.all([
+                    uploadToCloudinary(photoFile.buffer),
+                    detectFood(photoFile.buffer).catch(err => {
+                        console.error('AI detection slight error (ignoring):', err.message);
+                        return null;
                     })
-                    .catch(err => {
-                        console.error('AI detection error:', err.message);
-                    });
-            } catch (uploadError) {
-                console.error('Photo upload error:', uploadError);
-                // Continue without photo if upload fails
+                ]);
+
+                console.log(`[LOG] Parallel processing done in ${Date.now() - startTime}ms`);
+
+                photoUrl = uploadedUrl;
+                aiDetection = aiResult;
+
+            } catch (error) {
+                console.error('Error in photo processing:', error);
+                // If upload fails, we can't really proceed with the photo part
             }
         }
 
@@ -106,10 +115,13 @@ const createLog = async (req, res) => {
         }
 
         // Generate AI insight (enhanced with health context)
-        const insightData = await generateInsight(req.user._id, {
+        // Optimization: Pass full req.user to avoid DB refetch
+        const insightStart = Date.now();
+        const insightData = await generateInsight(req.user, {
             timeOfDay,
             sugarAmount,
         }, healthContext);
+        console.log(`[PERF] Insight generation took ${Date.now() - insightStart}ms`);
 
         // Create sugar log (XP is NO LONGER awarded here)
         const sugarLog = await SugarLog.create({
@@ -137,26 +149,35 @@ const createLog = async (req, res) => {
 
         // Update sugar log with insight reference
         sugarLog.insightGenerated = insight._id;
+        const dbSaveStart = Date.now();
         await sugarLog.save();
+        console.log(`[PERF] DB Save took ${Date.now() - dbSaveStart}ms`);
+        console.log(`[PERF] Total Request took ${Date.now() - reqStart}ms`);
 
-        // Check for milestone achievements and send email if needed
-        const { calculateStreak: checkMilestone, getMotivationalMessage } = require('../services/streakService');
+        // Check for milestone achievements (using result from updateStreak)
+        // We do NOT need to call checkMilestone again, as updateStreak already checks it.
         const { sendMilestoneEmail } = require('../services/emailService');
-        const User = require('../models/User');
+        const { getMotivationalMessage } = require('../services/streakService');
 
-        const milestoneCheck = await checkMilestone(req.user._id);
+        // Check if a new achievement was unlocked in this very request
+        const newAchievement = streakResult.achievement;
 
-        // Send milestone email if achieved and email verified
-        if (milestoneCheck.milestone) {
-            const user = await User.findById(req.user._id);
-            if (user.emailVerification?.isVerified) {
-                await sendMilestoneEmail(user, milestoneCheck.milestone);
+        // Send milestone email if achieved and email verified (FIRE AND FORGET - Non-blocking)
+        if (newAchievement) {
+            if (req.user.emailVerification?.isVerified) {
+                // specific milestone value is in the achievement object
+                const milestoneValue = newAchievement.milestone;
+                console.log(`[LOG] Sending milestone email for day ${milestoneValue} (Background)`);
+                sendMilestoneEmail(req.user, milestoneValue).catch(err =>
+                    console.error('[LOG] Background email failed:', err.message)
+                );
             }
         }
 
         // Get motivational message
+        // Use the current streak from the updateResult
         const motivationalMessage = getMotivationalMessage({
-            streak: milestoneCheck.streak,
+            streak: streakResult.currentStreak,
             activityLevel: healthContext?.activityLevel,
             recoveryState: healthContext?.recoveryState,
             energyState: healthContext?.energyState,
@@ -176,9 +197,9 @@ const createLog = async (req, res) => {
                     achievement: streakResult.achievement || null,
                 },
                 streak: {
-                    current: milestoneCheck.streak,
-                    longest: milestoneCheck.longestStreak,
-                    milestone: milestoneCheck.milestone,
+                    current: streakResult.currentStreak,
+                    longest: req.user.gamification.longestStreak, // Available on req.user
+                    milestone: streakResult.achievement ? streakResult.achievement.milestone : null,
                 },
                 motivationalMessage,
             },

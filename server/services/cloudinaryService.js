@@ -18,11 +18,7 @@ const uploadToCloudinary = (fileBuffer, folder = 'sugar-logs') => {
             {
                 folder: folder,
                 resource_type: 'image',
-                transformation: [
-                    { width: 800, height: 800, crop: 'limit' }, // Resize to max 800x800
-                    { quality: 'auto' }, // Auto quality
-                    { fetch_format: 'auto' }, // Auto format (webp for modern browsers)
-                ],
+                // Client handles compression, so we store directly for speed
             },
             (error, result) => {
                 if (error) {
