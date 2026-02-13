@@ -28,6 +28,10 @@ app.use('/api/health', require('./routes/health'));
 app.use('/api/users', require('./routes/users'));
 
 // Health check
+app.get('/', (req, res) => {
+    res.send('SpikeIQ Server is Running! 🚀');
+});
+
 app.get('/api/health-check', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
 });
