@@ -40,3 +40,12 @@ Thumbs.db
 temp/
 tmp/
 
+
+# Test Scripts
+server/test-*.js
+
+# Documentation Guides (Local Only)
+*_SETUP.md
+*_GUIDE.md
+QUICKSTART.md
+DEPLOYMENT.md
