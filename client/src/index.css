@@ -14,6 +14,7 @@
 }
 
 @layer components {
+
   /* Glass morphism card */
   .glass-card {
     @apply bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-gray-700/20;
@@ -46,7 +47,7 @@
 
   /* Page container */
   .page-container {
-    @apply max-w-lg mx-auto p-4 md:p-6 min-h-screen;
+    @apply max-w-lg mx-auto p-4 md:p-6 min-h-screen pb-32;
   }
 
   /* Section card */

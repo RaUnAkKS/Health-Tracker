@@ -16,7 +16,7 @@ const Layout = ({ children }) => {
     ];
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="min-h-screen pb-28">
             {/* Header */}
             <header className="sticky top-0 z-40 glass-card rounded-none border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-lg mx-auto px-4 py-4 flex justify-between items-center">

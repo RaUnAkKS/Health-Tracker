@@ -35,7 +35,7 @@ const QuickLogModal = ({ isOpen, onClose, foodItem, onConfirm }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4"
                     >
                         {/* Modal Content */}
                         <motion.div
@@ -71,8 +71,8 @@ const QuickLogModal = ({ isOpen, onClose, foodItem, onConfirm }) => {
                                 <button
                                     onClick={() => setMode('default')}
                                     className={`w-full p-4 rounded-xl border-2 flex items-center justify-between transition-all ${mode === 'default'
-                                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                            : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
+                                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-primary-300'
                                         }`}
                                 >
                                     <div className="text-left">
@@ -96,8 +96,8 @@ const QuickLogModal = ({ isOpen, onClose, foodItem, onConfirm }) => {
                                 {/* Option 2: Custom */}
                                 <div
                                     className={`w-full p-4 rounded-xl border-2 transition-all ${mode === 'custom'
-                                            ? 'border-primary-500 bg-white dark:bg-gray-800 ring-2 ring-primary-100 dark:ring-primary-900/30'
-                                            : 'border-gray-200 dark:border-gray-700'
+                                        ? 'border-primary-500 bg-white dark:bg-gray-800 ring-2 ring-primary-100 dark:ring-primary-900/30'
+                                        : 'border-gray-200 dark:border-gray-700'
                                         }`}
                                     onClick={() => setMode('custom')}
                                 >
