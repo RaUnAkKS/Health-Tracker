@@ -9,9 +9,12 @@ import Insight from './pages/Insight';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import SugarIntelligence from './pages/SugarIntelligence';
+import Calendar from './pages/Calendar';
+
+import FeatureLocked from './components/FeatureLocked';
 
 function App() {
-    const { isOnboarded, initializeFromStorage } = useUserStore();
+    const { isOnboarded, isAnonymous, initializeFromStorage } = useUserStore();
     const { initializeDarkMode } = useSettingsStore();
 
     useEffect(() => {
@@ -55,6 +58,15 @@ function App() {
                     />
 
                     <Route
+                        path="/calendar"
+                        element={
+                            isOnboarded ? (
+                                !isAnonymous ? <Calendar /> : <FeatureLocked />
+                            ) : <Navigate to="/" replace />
+                        }
+                    />
+
+                    <Route
                         path="/profile"
                         element={
                             isOnboarded ? <Profile /> : <Navigate to="/" replace />
@@ -64,7 +76,9 @@ function App() {
                     <Route
                         path="/intelligence"
                         element={
-                            isOnboarded ? <SugarIntelligence /> : <Navigate to="/" replace />
+                            isOnboarded ? (
+                                !isAnonymous ? <SugarIntelligence /> : <FeatureLocked />
+                            ) : <Navigate to="/" replace />
                         }
                     />
 

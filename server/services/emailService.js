@@ -84,7 +84,7 @@ const sendOTPEmail = async (email, otp, userName = 'there') => {
 };
 
 /**
- * Send daily streak reminder (7 PM)
+ * Send daily streak reminder (8 PM)
  */
 const sendStreakReminder = async (user) => {
     try {
@@ -97,53 +97,54 @@ const sendStreakReminder = async (user) => {
         const streak = user.gamification?.currentStreak || 0;
         const userName = user.email.split('@')[0];
 
+        // Subject Logic
+        let subject = `Don’t lose your streak 🔥`;
+        if (streak >= 30) subject = `You’ve Built Something Strong. Protect It.`;
+        else if (streak >= 7) subject = `Your ${streak}-Day Streak Is At Risk`;
+
         const mailOptions = {
-            from: `Health Tracker <${process.env.EMAIL_USER}>`,
+            from: `SpikeIQ <${process.env.EMAIL_USER}>`,
             to: user.email,
-            subject: `Your ${streak}-day streak is waiting 🔥`,
+            subject: subject,
             html: `
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <style>
-                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                        .header { text-align: center; padding: 20px 0; }
-                        .streak-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 30px; text-align: center; margin: 20px 0; }
-                        .button { display: inline-block; background: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-                        .footer { text-align: center; color: #888; font-size: 12px; margin-top: 30px; }
+                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+                        .card { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; border: 1px solid #f3f4f6; }
+                        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; color: white; }
+                        .content { padding: 30px; text-align: center; }
+                        .streak-number { font-size: 48px; font-weight: 800; color: #059669; line-height: 1; margin: 20px 0 10px; }
+                        .btn { display: inline-block; background: #10b981; color: white; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 99px; margin-top: 24px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); }
+                        .footer { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 40px; }
                     </style>
                 </head>
-                <body>
+                <body style="background-color: #f9fafb;">
                     <div class="container">
-                        <div class="header">
-                            <h2>🍬 Health Tracker</h2>
+                        <div class="card">
+                            <div class="header">
+                                <h2 style="margin: 0; font-size: 24px;">SpikeIQ</h2>
+                            </div>
+                            
+                            <div class="content">
+                                <p style="font-size: 18px; margin-bottom: 0;">Hi ${userName},</p>
+                                
+                                <p style="color: #4b5563;">You’re on a</p>
+                                <div class="streak-number">${streak}-day streak</div>
+                                <p style="color: #4b5563; font-weight: 500;">Log your intake today to keep your momentum alive.</p>
+                                
+                                <p style="color: #6b7280; font-size: 15px;">One quick entry protects your progress.</p>
+                                
+                                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" class="btn">
+                                    Log Now
+                                </a>
+                            </div>
                         </div>
-                        
-                        <p>Hey ${userName},</p>
-                        
-                        <div class="streak-box">
-                            <h1 style="font-size: 48px; margin: 0;">🔥</h1>
-                            <h2 style="margin: 10px 0;">${streak}-Day Streak</h2>
-                            <p style="opacity: 0.9;">You're building something real</p>
-                        </div>
-                        
-                        <p>You're on a <strong>${streak}-day streak</strong>.</p>
-                        <p>Log today in under 10 seconds and keep building momentum.</p>
-                        
-                        ${streak >= 7 ? '<p><strong>You\'ve come too far to lose it now.</strong></p>' : ''}
-                        
-                        <div style="text-align: center;">
-                            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" class="button">
-                                Protect My Streak
-                            </a>
-                        </div>
-                        
-                        <p style="color: #666; font-size: 14px; margin-top: 30px;">Your future self will thank you.</p>
                         
                         <div class="footer">
-                            <p>You're in control. We're just here to support you.</p>
-                            <p><a href="#" style="color: #888;">Manage Email Preferences</a></p>
+                            <p>You received this because you're tracking your health with SpikeIQ.</p>
                         </div>
                     </div>
                 </body>

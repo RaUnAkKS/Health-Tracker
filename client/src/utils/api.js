@@ -67,7 +67,11 @@ export const logsAPI = {
             });
 
             // Let axios handle Content-Type for multipart/form-data
-            return api.post('/logs', formData);
+            return api.post('/logs', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
         } else {
             // Regular JSON request
             console.log('[API] Sending JSON without photo');
@@ -78,6 +82,7 @@ export const logsAPI = {
     getTodayLogs: () => api.get('/logs/today'),
     completeAction: (id) => api.put(`/logs/${id}/action`),
     assignTask: (id, taskId) => api.put(`/logs/${id}/task`, { taskId }),
+    getMonthStats: (year, month) => api.get('/logs/stats/month', { params: { year, month } }),
 };
 
 // Gamification API

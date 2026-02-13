@@ -11,8 +11,9 @@ const app = express();
 connectDB();
 
 // Start daily reminder cron job
-const { startDailyReminderCron } = require('./jobs/dailyReminderCron');
-startDailyReminderCron();
+// Initialize Scheduler (Streak Reminders)
+const { initScheduler } = require('./services/schedulerService');
+initScheduler();
 
 // Middleware
 app.use(cors());

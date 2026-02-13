@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Mic } from 'lucide-react';
 import Layout from '../components/Layout';
 import StreakCounter from '../components/StreakCounter';
 import XPDisplay from '../components/XPDisplay';
@@ -9,6 +9,7 @@ import SugarLogCard from '../components/SugarLogCard';
 import AchievementToast from '../components/AchievementToast';
 import CustomLogModal from '../components/CustomLogModal';
 import QuickLogModal from '../components/QuickLogModal';
+import VoiceLogModal from '../components/VoiceLogModal';
 import LevelUpOverlay from '../components/LevelUpOverlay';
 import MilestoneOverlay from '../components/MilestoneOverlay';
 import HealthPermissionCard from '../components/HealthPermissionCard';
@@ -52,6 +53,7 @@ const Dashboard = () => {
 
     const [loading, setLoading] = useState(false);
     const [showCustomModal, setShowCustomModal] = useState(false);
+    const [showVoiceModal, setShowVoiceModal] = useState(false);
     const [selectedFoodItem, setSelectedFoodItem] = useState(null); // For QuickLogModal
     const [showHealthPermission, setShowHealthPermission] = useState(false);
     const [showMilestone, setShowMilestone] = useState(false);
@@ -234,6 +236,31 @@ const Dashboard = () => {
         setLoading(false);
     };
 
+    const handleVoiceLogConfirm = async (data) => {
+        // data contains { type, customAmount, description }
+        setShowVoiceModal(false);
+        setLoading(true);
+        if (hapticEnabled) triggerHaptic();
+
+        // Use same createLog flow
+        const result = await createLog(data);
+
+        if (result.success) {
+            const { gamification, insight } = result.data;
+            if (soundEnabled) playSuccessSound();
+            if (gamification) {
+                awardXP(gamification.xpGained, gamification.achievement);
+                updateStreak({ currentStreak: gamification.currentStreak });
+            }
+            await fetchTodayLogs();
+            await fetchStreakStatus();
+            setTimeout(() => navigate('/insight'), 500);
+        } else {
+            alert(result.error);
+        }
+        setLoading(false);
+    };
+
     const handleHealthPermissionGranted = () => {
         setShowHealthPermission(false);
         // Permission is already stored in localStorage by the service
@@ -364,14 +391,26 @@ const Dashboard = () => {
                     </div>
 
                     {/* Custom Log Button */}
-                    <button
-                        onClick={() => setShowCustomModal(true)}
-                        className="w-full mt-4 glass-card p-4 border-2 border-dashed border-primary-300 dark:border-primary-600 hover:border-primary-500 transition-all text-primary-700 dark:text-primary-300 font-semibold flex items-center justify-center gap-2"
-                        disabled={loading}
-                    >
-                        <Plus size={20} />
-                        Custom Log with Photo
-                    </button>
+                    {/* Custom Log Buttons */}
+                    <div className="flex gap-3 mt-4">
+                        <button
+                            onClick={() => setShowCustomModal(true)}
+                            className="flex-1 glass-card p-4 border-2 border-dashed border-primary-300 dark:border-primary-600 hover:border-primary-500 transition-all text-primary-700 dark:text-primary-300 font-semibold flex items-center justify-center gap-2"
+                            disabled={loading}
+                        >
+                            <Plus size={20} />
+                            Custom Log
+                        </button>
+
+                        <button
+                            onClick={() => setShowVoiceModal(true)}
+                            className="glass-card p-4 border-2 border-dashed border-primary-300 dark:border-primary-600 hover:border-primary-500 transition-all text-primary-700 dark:text-primary-300 font-semibold flex items-center justify-center aspect-square"
+                            disabled={loading}
+                            aria-label="Voice Log"
+                        >
+                            <Mic size={24} />
+                        </button>
+                    </div>
 
                     {loading && (
                         <div className="text-center mt-4">
@@ -394,6 +433,13 @@ const Dashboard = () => {
                     onClose={() => setShowCustomModal(false)}
                     onSubmit={handleCustomLog}
                     loading={loading}
+                />
+
+                {/* Voice Log Modal */}
+                <VoiceLogModal
+                    isOpen={showVoiceModal}
+                    onClose={() => setShowVoiceModal(false)}
+                    onConfirm={handleVoiceLogConfirm}
                 />
 
                 {/* Quick Log Modal */}

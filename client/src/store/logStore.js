@@ -175,6 +175,19 @@ const useLogStore = create((set, get) => ({
             latestInsight: null,
         });
     },
+    // Fetch monthly stats
+    fetchMonthStats: async (year, month) => {
+        try {
+            const response = await logsAPI.getMonthStats(year, month);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            console.error('Error fetching month stats:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || 'Failed to fetch month stats',
+            };
+        }
+    },
 }));
 
 export default useLogStore;

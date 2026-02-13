@@ -169,10 +169,7 @@ const History = () => {
                                 }
 
                                 // Determine Display Title
-                                let displayTitle = PRESET_NAMES[log.type] || 'Custom Log';
-                                if (log.type === 'CUSTOM') {
-                                    displayTitle = log.description || 'Custom Sugar Log';
-                                }
+                                let displayTitle = log.description || PRESET_NAMES[log.type] || 'Custom Log';
 
                                 return (
                                     <motion.div

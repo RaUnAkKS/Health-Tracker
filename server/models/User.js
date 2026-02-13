@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema(
                 type: Number,
                 default: 0,
             },
+            reminderSentToday: {
+                type: Boolean,
+                default: false,
+            },
             // Milestone tracking
             milestones: {
                 day3: { type: Boolean, default: false },
@@ -94,6 +98,10 @@ const userSchema = new mongoose.Schema(
             notifications: {
                 type: Boolean,
                 default: true,
+            },
+            timezone: {
+                type: String,
+                default: 'UTC',
             },
         },
 
