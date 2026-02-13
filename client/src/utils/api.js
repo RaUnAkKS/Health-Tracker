@@ -31,9 +31,15 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Token expired or invalid
-            storage.remove('authToken');
-            storage.remove('userData');
-            window.location.href = '/';
+            console.warn('[API] 401 Unauthorized - Clearing storage');
+            localStorage.clear(); // Clear all storage
+            storage.clear();
+
+            // Only reload if we are NOT already on the home page to avoid loops
+            if (window.location.pathname !== '/') {
+                window.location.href = '/';
+            }
+            // If on home page, DO NOTHING. Let the UI handle the missing token.
         }
         return Promise.reject(error);
     }
