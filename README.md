@@ -1,159 +1,183 @@
 # SpikeIQ 🍬⚡
 
-**Real-Time, Context-Aware Nudges for Healthier Choices**
+**Scientific Sugar Tracking & AI Insights**
 
-A mobile-first, gamified health tracking web application that helps users reduce sugar intake through real-time logging, AI-driven insights, and psychology-based engagement features.
+SpikeIQ is a modern, full-stack health application designed to help users manage their sugar intake through real-time logging, gamification, and AI-driven insights. It combines behavioral psychology (streaks, variable rewards) with hard data to build healthier habits.
+
+![SpikeIQ Banner](https://via.placeholder.com/1200x400.png?text=SpikeIQ+Health+Tracker)
 
 ## ✨ Features
 
-- 🎮 **Gamified Onboarding** - No signup required, one question per screen
-- ⚡ **Fast Sugar Logging** - Log sugar in under 10 seconds with preset cards
-- 🔥 **Daily Streak System** - Build habits with loss aversion psychology
-- 🤖 **AI-Powered Insights** - Context-aware personalized recommendations
-- 📱 **Mobile-First Design** - Responsive, smooth animations, dark mode support
-- 🎯 **Variable Rewards** - Dynamic XP system to increase engagement
-- 🏆 **Achievement Milestones** - Celebrate progress at Days 1, 3, 7, 30
+- **🚀 Smart Logging**: Log common items (Chai, Sweets) in one tap or use **Voice Logging** for hands-free entry.
+- **⚡ Fast Uploads**: Client-side image compression for instant photo logging.
+- **🧠 Sugar Intelligence**: Personalized AI feed that analyzes your habits and gives actionable advice.
+- **🔥 Streak System**: Build consistency with a powerful daily streak mechanic.
+- **🎮 Gamification**: Earn XP, level up, and unlock milestones (Day 3, 7, 30).
+- **📅 Visual History**: Monthly calendar view to track your long-term progress.
+- **🔔 Smart Reminders**: Automated emails to save your streak if you forget to log.
+- **📱 Mobile-First**: Fully responsive design with smooth animations and dark mode.
+
+## 🔗 Live Demo
+- **Frontend**: [health-tracker-fawn.vercel.app](https://health-tracker-fawn.vercel.app)
+- **Backend API**: [spikeiq-server.onrender.com](https://spikeiq-server.onrender.com)
+
+---
+
+## 🧠 AI & Machine Learning Architecture
+
+SpikeIQ uses a hybrid approach of **Rule-Based Systems** and **Cloud AI** to deliver its features:
+
+1.  **Sugar Intelligence Engine (Rule-Based Expert System)**
+    -   **File**: `server/services/insightEngine.js`
+    -   **Function**: Analyzes user logs, streaks, and time-of-day patterns against a knowledge base of 150+ health facts.
+    -   **Output**: Context-aware recommendations (e.g., "High sugar morning" -> "Suggest protein-heavy lunch").
+
+2.  **Visual Food Recognition (Google Cloud Vision API)**
+    -   **Integration**: `server/services/foodDetectionService.js`
+    -   **Function**: When users upload a photo, image classification models identify the food item.
+    -   **Output**: Automatic tagging (e.g., "Chocolate Cake") to suggest sugar content.
+
+3.  **Voice Processing (Web Speech API)**
+    -   **Integration**: `client/src/utils/voiceParser.js`
+    -   **Function**: Uses browser-native NLP to transcribe speech.
+    -   **Logic**: Regex-based parsing extracts food items and quantities (e.g., "Had 2 cups of tea" -> `{ item: "tea", qty: 2 }`).
+
+---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- React 18 with Vite
-- TailwindCSS for styling
-- Framer Motion for animations
-- Zustand for state management
-- Axios for API calls
+**Frontend**
+- **Framework**: React 18 + Vite
+- **Styling**: TailwindCSS
+- **State**: Zustand (with persistence)
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **HTTP**: Axios
 
-### Backend
-- Node.js + Express
-- MongoDB with Mongoose
-- JWT authentication (optional signup)
-- Rule-based AI insight engine
+**Backend**
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB Atlas (Mongoose)
+- **Auth**: JWT (JSON Web Tokens)
+- **Storage**: Cloudinary (Image upload)
+- **Email**: Nodemailer (Streak reminders)
+- **Scheduling**: Node-Cron
 
-## 🚀 Quick Start
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
-- MongoDB (local or Atlas)
+- **Node.js** (v18 or higher)
+- **MongoDB Atlas** account (or local MongoDB)
+- **Cloudinary** account (for images)
+- **Gmail Account** (for email reminders - requires App Password)
 
-### Installation
+### 1. Installation
 
-1. Clone the repository
+Clone the repo and install dependencies for both client and server:
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/RaUnAkKS/Health-Tracker.git
 cd Health-Tracker
-```
 
-2. Install all dependencies
-```bash
+# Install root, client, and server dependencies
 npm run install-all
 ```
 
-3. Set up environment variables
+### 2. Environment Variables
 
-**Client (.env in client folder):**
+You need to create **two** `.env` files.
+
+**A. Server Config (`server/.env`)**
+Create this file in the `server/` directory:
+
+```env
+PORT=5000
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/spikeiq
+JWT_SECRET=your_super_secret_key_change_this_to_something_random
+NODE_ENV=development
+
+# Cloudinary (for Image Uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Email Service (for Streak Reminders)
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+CLIENT_URL=http://localhost:5173
+```
+
+**B. Client Config (`client/.env`)**
+Create this file in the `client/` directory:
+
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-**Server (.env in server folder):**
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/sugar-tracker
-JWT_SECRET=your-secret-key-here
-NODE_ENV=development
-```
+### 3. Running Locally
 
-4. Run the application
+Start both the frontend and backend with a single command:
+
 ```bash
 npm run dev
 ```
 
-This will start:
-- Frontend at `http://localhost:5173`
-- Backend at `http://localhost:5000`
-
-## 📁 Project Structure
-
-```
-Health-Tracker/
-├── client/                 # React frontend
-│   ├── src/
-│   │   ├── pages/         # Page components
-│   │   ├── components/    # Reusable components
-│   │   ├── store/         # Zustand state management
-│   │   ├── utils/         # Helper functions
-│   │   └── assets/        # Images, sounds, icons
-│   └── package.json
-├── server/                # Express backend
-│   ├── models/           # MongoDB schemas
-│   ├── routes/           # API routes
-│   ├── controllers/      # Route handlers
-│   ├── services/         # Business logic
-│   ├── middleware/       # Custom middleware
-│   ├── config/           # Configuration files
-│   └── package.json
-└── package.json          # Root workspace config
-```
-
-## 🎯 Usage
-
-1. **First Visit**: Complete the gamified onboarding (age, height, weight, gender)
-2. **Log Sugar**: Tap preset cards (Chai, Sweets, Cold Drink, Snacks)
-3. **Get Insights**: Receive personalized AI recommendations
-4. **Build Streaks**: Log daily to maintain your streak 🔥
-5. **Earn XP**: Complete corrective actions for bonus points
-6. **Optional Signup**: Unlock cross-device sync after experiencing value
-
-## 🧪 Testing
-
-```bash
-# Frontend build test
-cd client && npm run build
-
-# Backend tests (if implemented)
-cd server && npm test
-```
-
-## 📱 Mobile Testing
-
-Use browser DevTools to test mobile responsiveness:
-1. Open Chrome DevTools (F12)
-2. Toggle device toolbar (Ctrl+Shift+M)
-3. Select mobile device presets
-4. Test touch interactions and animations
-
-## 🎨 Design Philosophy
-
-- **Loss Aversion**: Streaks create commitment
-- **Instant Gratification**: Animations + sounds on every action
-- **Variable Rewards**: Unpredictable XP to boost engagement
-- **Habit Loop Design**: Cue → Routine → Reward
-
-## 🏗️ Development
-
-### Adding New Features
-
-1. Create backend route in `server/routes/`
-2. Add controller logic in `server/controllers/`
-3. Create frontend component in `client/src/components/`
-4. Add to relevant page in `client/src/pages/`
-5. Update Zustand store if needed
-
-### Code Style
-
-- Use ES6+ syntax
-- Component names in PascalCase
-- File names match component names
-- Keep components focused and reusable
-
-## 📄 License
-
-ISC
-
-## 🤝 Contributing
-
-This is a hackathon project. Feel free to fork and experiment!
+- **Frontend**: `http://localhost:5173`
+- **Backend**: `http://localhost:5000`
 
 ---
 
-**Built with ❤️ for healthier choices**
+## 🌐 Deployment
+
+### Backend (Render)
+1.  Connect your GitHub repo to **Render**.
+2.  Select the `server` directory as the generic **Root Directory**.
+3.  **Build Command**: `npm install`
+4.  **Start Command**: `node server.js`
+5.  Add all environment variables from `server/.env` to Render's Environment dashboard.
+
+### Frontend (Vercel)
+1.  Connect your GitHub repo to **Vercel**.
+2.  Select the `client` directory as the **Root Directory**.
+3.  **Build Command**: `npm run build`
+4.  **Output Directory**: `dist`
+5.  Add `VITE_API_URL` environment variable (set it to your Render Backend URL).
+
+### ⚡ Optimization (Optional)
+To keep the free Render server awake 24/7, set up **UptimeRobot** to ping the backend URL (`/`) every 5 minutes.
+
+---
+
+## 📂 Project Structure
+
+```
+Health-Tracker/
+├── client/                 # React Frontend
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Main route pages
+│   │   ├── store/         # State management (Zustand)
+│   │   ├── utils/         # Helpers (Image compression, API)
+│   │   └── App.jsx        # Routing & Layout
+│   └── vite.config.js
+│
+├── server/                 # Express Backend
+│   ├── config/            # DB & Cloudinary connection
+│   ├── controllers/       # Route logic
+│   ├── models/            # Mongoose schemas
+│   ├── routes/            # API endpoints
+│   ├── services/          # Email, Cron, Cloudinary logic
+│   └── server.js          # Entry point
+│
+└── package.json           # Root scripts
+```
+
+---
+
+## 🤝 Contributing
+
+This is a portfolio/hackathon project. Feel free to fork it!
+If you find a bug, please submit an issue.
