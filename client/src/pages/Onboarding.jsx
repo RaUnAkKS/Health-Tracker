@@ -210,8 +210,11 @@ const Onboarding = () => {
             exit="exit"
             className="page-container flex flex-col justify-center min-h-screen relative"
         >
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gradient text-center mb-2">
+            <div className="mb-8 text-center">
+                <span className="inline-block text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-500 mb-2">
+                    SpikeIQ
+                </span>
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
                     Let's get started! 🚀
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 text-center">

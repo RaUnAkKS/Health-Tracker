@@ -15,7 +15,7 @@ import { calculateBMI, getBMInCategory, calculateAge } from '../utils/healthCalc
 import { pageVariants } from '../utils/animations';
 
 const Profile = () => {
-    const { user, isAnonymous, upgradeAccount, logout, updateProfile } = useUserStore();
+    const { user, isAnonymous, upgradeAccount, login, logout, updateProfile } = useUserStore();
     const { clearGameData } = useGameStore();
     const { clearLogData } = useLogStore();
     const {
@@ -30,6 +30,7 @@ const Profile = () => {
     } = useSettingsStore();
 
     const [showUpgrade, setShowUpgrade] = useState(false);
+    const [isSignUp, setIsSignUp] = useState(true); // Toggle between SignUp and Login
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -73,14 +74,19 @@ const Profile = () => {
         }
     };
 
-    const handleUpgrade = async (e) => {
+    const handleAuth = async (e) => {
         e.preventDefault();
         setLoading(true);
 
-        const result = await upgradeAccount(email, password);
+        let result;
+        if (isSignUp) {
+            result = await upgradeAccount(email, password);
+        } else {
+            result = await login(email, password);
+        }
 
         if (result.success) {
-            alert('Account upgraded successfully! 🎉');
+            alert(isSignUp ? 'Account upgraded successfully! 🎉' : 'Logged in successfully! 🚀');
             setShowUpgrade(false);
             setEmail('');
             setPassword('');
@@ -240,23 +246,23 @@ const Profile = () => {
                 {isAnonymous && !showUpgrade && (
                     <div className="glass-card p-6 border-2 border-primary-500">
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
-                            Upgrade Account 🚀
+                            Upgrade & Sync 🚀
                         </h3>
 
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            Add email & password to secure your data
+                            Create an account or log in to sync your data across devices
                         </p>
 
                         <button
                             onClick={() => setShowUpgrade(true)}
                             className="btn-primary w-full"
                         >
-                            Upgrade Now
+                            Upgrade / Log In
                         </button>
                     </div>
                 )}
 
-                {/* Upgrade Form */}
+                {/* Upgrade/Login Form */}
                 {showUpgrade && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -264,10 +270,10 @@ const Profile = () => {
                         className="glass-card p-6"
                     >
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
-                            Create Your Account
+                            {isSignUp ? 'Create Your Account' : 'Welcome Back'}
                         </h3>
 
-                        <form onSubmit={handleUpgrade} className="space-y-4">
+                        <form onSubmit={handleAuth} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Email
@@ -297,22 +303,35 @@ const Profile = () => {
                                 />
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex flex-col gap-3">
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="btn-primary flex-1"
+                                    className="btn-primary w-full"
                                 >
-                                    {loading ? 'Upgrading...' : 'Create Account'}
+                                    {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Log In')}
                                 </button>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setShowUpgrade(false)}
-                                    className="btn-secondary flex-1"
-                                >
-                                    Cancel
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowUpgrade(false)}
+                                        className="btn-secondary flex-1"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+
+                                <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                    {isSignUp ? "Already have an account? " : "New here? "}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSignUp(!isSignUp)}
+                                        className="text-primary-600 dark:text-primary-400 font-bold hover:underline"
+                                    >
+                                        {isSignUp ? 'Log In' : 'Sign Up'}
+                                    </button>
+                                </p>
                             </div>
                         </form>
                     </motion.div>
