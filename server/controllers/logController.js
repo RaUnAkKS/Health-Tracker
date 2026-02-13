@@ -15,14 +15,19 @@ const createLog = async (req, res) => {
     try {
         console.log('[LOG] Create log request received');
         console.log('[LOG] Body:', req.body);
+        console.log('[LOG] Body fields:', Object.keys(req.body));
         console.log('[LOG] Has file:', !!req.file);
         if (req.file) {
-            console.log('[LOG] File details:', {
+            console.log('[LOG] File received:', {
+                fieldname: req.file.fieldname,
                 mimetype: req.file.mimetype,
                 size: req.file.size,
                 originalname: req.file.originalname,
             });
         }
+
+        // Debug Cloudinary Config
+        console.log('[LOG] Cloudinary Configured:', !!process.env.CLOUDINARY_CLOUD_NAME);
 
         const { type, description, customAmount } = req.body;
         const photoFile = req.file; // From multer upload middleware
@@ -48,7 +53,18 @@ const createLog = async (req, res) => {
         const xpResult = { xpGained: 0 };
 
         // Extract health context from request (privacy-first labels only)
-        const healthContext = req.body.healthContext || null;
+        let healthContext = req.body.healthContext || null;
+
+        // When using FormData (file upload), nested objects come as JSON strings
+        if (typeof healthContext === 'string') {
+            try {
+                healthContext = JSON.parse(healthContext);
+            } catch (e) {
+                console.warn('Failed to parse healthContext:', e);
+                healthContext = null;
+            }
+        }
+
         if (healthContext) {
             console.log('[LOG] Health context received:', {
                 activityLevel: healthContext.activityLevel,
@@ -180,15 +196,28 @@ const createLog = async (req, res) => {
  */
 const getLogs = async (req, res) => {
     try {
-        const { limit = 20, page = 1 } = req.query;
+        const { limit = 20, page = 1, date } = req.query;
 
-        const logs = await SugarLog.find({ user: req.user._id })
+        let query = { user: req.user._id };
+
+        // Date filter (specific day)
+        if (date) {
+            const startDate = new Date(date);
+            startDate.setHours(0, 0, 0, 0);
+
+            const endDate = new Date(date);
+            endDate.setHours(23, 59, 59, 999);
+
+            query.createdAt = { $gte: startDate, $lte: endDate };
+        }
+
+        const logs = await SugarLog.find(query)
             .populate('insightGenerated')
             .sort({ createdAt: -1 })
             .limit(parseInt(limit))
             .skip((parseInt(page) - 1) * parseInt(limit));
 
-        const totalLogs = await SugarLog.countDocuments({ user: req.user._id });
+        const totalLogs = await SugarLog.countDocuments(query);
 
         res.json({
             logs,
@@ -253,9 +282,100 @@ const completeAction = async (req, res) => {
     }
 };
 
+/**
+ * @desc    Assign a specific task ID to a log
+ * @route   PUT /api/logs/:id/task
+ * @access  Private
+ */
+const assignTask = async (req, res) => {
+    try {
+        const { taskId } = req.body;
+
+        if (!taskId) {
+            return res.status(400).json({ success: false, message: 'TaskId is required' });
+        }
+
+        const log = await SugarLog.findOne({ _id: req.params.id, user: req.user._id });
+
+        if (!log) {
+            return res.status(404).json({ success: false, message: 'Log not found' });
+        }
+
+        log.correctiveActionTaskId = taskId;
+        await log.save();
+
+        res.json({
+            success: true,
+            data: log
+        });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/**
+ * @desc    Get monthly statistics (daily aggregation)
+ * @route   GET /api/logs/stats/month
+ * @access  Private
+ */
+const getMonthStats = async (req, res) => {
+    try {
+        const { year, month } = req.query; // month is 1-indexed (1=Jan, 12=Dec)
+
+        if (!year || !month) {
+            return res.status(400).json({ message: 'Year and month are required' });
+        }
+
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+        // Aggregate logs by day
+        const dailyStats = await SugarLog.aggregate([
+            {
+                $match: {
+                    user: req.user._id,
+                    createdAt: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    totalSugar: { $sum: "$sugarAmount" },
+                    logCount: { $sum: 1 },
+                    hasCrash: {
+                        $max: {
+                            $cond: [{ $eq: ["$type", "SUGAR_CRASH"] }, true, false]
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    date: "$_id",
+                    totalSugar: 1,
+                    logCount: 1,
+                    hasCrash: 1,
+                    _id: 0
+                }
+            },
+            { $sort: { date: 1 } }
+        ]);
+
+        res.json({
+            success: true,
+            data: dailyStats
+        });
+    } catch (error) {
+        console.error('Error fetching month stats:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createLog,
     getLogs,
     getTodayLogs,
     completeAction,
+    assignTask,
+    getMonthStats
 };

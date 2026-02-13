@@ -61,6 +61,9 @@ const sugarLogSchema = new mongoose.Schema(
             default: false,
         },
 
+        // ID of the specific task (from tasksData) assigned to this log
+        correctiveActionTaskId: String,
+
         correctiveActionCompletedAt: Date,
     },
     {
