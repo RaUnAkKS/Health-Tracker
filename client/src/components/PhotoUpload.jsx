@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import { compressImage } from '../utils/imageCompression';
 
 const PhotoUpload = ({ onPhotoSelect, selectedPhoto, onClear }) => {
     const cameraInputRef = useRef(null);
@@ -22,13 +23,24 @@ const PhotoUpload = ({ onPhotoSelect, selectedPhoto, onClear }) => {
                 return;
             }
 
-            // Create preview
+            // Create preview immediately
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
-                onPhotoSelect(file);
             };
             reader.readAsDataURL(file);
+
+            // Compress image
+            compressImage(file)
+                .then((compressedFile) => {
+                    console.log(`[PhotoUpload] Original: ${(file.size / 1024).toFixed(2)}KB, Compressed: ${(compressedFile.size / 1024).toFixed(2)}KB`);
+                    onPhotoSelect(compressedFile);
+                })
+                .catch((error) => {
+                    console.error('[PhotoUpload] Compression failed:', error);
+                    // Fallback to original
+                    onPhotoSelect(file);
+                });
         }
     };
 
